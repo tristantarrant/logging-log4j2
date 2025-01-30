@@ -176,10 +176,11 @@ public final class InternalLoggerRegistry {
         // Write lock slow path: Insert the logger
         writeLock.lock();
         try {
-
             Logger currentLogger = loggerRefByNameByMessageFactory
                     .computeIfAbsent(messageFactory, ignored -> new HashMap<>())
-                    .computeIfAbsent(name, ignored -> new WeakReference<>(newLogger))
+                    .compute(
+                            name,
+                            (ignored, ref) -> (ref == null || ref.get() == null) ? new WeakReference<>(newLogger) : ref)
                     .get();
             // A replacement for Reference.reachabilityFence() from Java 9.
             // Prevents `newLogger` to become unreachable in the lines above.
